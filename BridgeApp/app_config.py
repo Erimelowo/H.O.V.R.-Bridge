@@ -36,7 +36,7 @@ class TrackerConfig(BaseModel):
     address_list: List[str] = []
     multiplier_override: float = 4.0
     pattern_override: str = "None"
-    battery_threshold: int = 0
+    battery_threshold: int = 20
     
     def get_address_str(self):
         if len(self.address_list) == 0:
@@ -62,7 +62,7 @@ class TrackerConfig(BaseModel):
         try:
             self.battery_threshold = int(value)
         except ValueError:
-            self.battery_threshold = 0
+            self.battery_threshold = 20
 
 
 class PatternConfig(BaseModel):
@@ -113,10 +113,10 @@ class AppConfig(BaseModel):
 
     def init_pattern_config(self):
         self.pattern_config_list.clear()
-        # PROXIMITY Defaults: (Linear, 50, 4)
+        # PROXIMITY Defaults: (Throb, 6, 80, 3)
         from app_pattern import VibrationPattern
-        self.pattern_config_list.append(PatternConfig(VibrationPattern.VIB_PATTERN_LIST[4], 0, 80, 4))
-        # VELOCITY Defaults: (None, 80, 32)
+        self.pattern_config_list.append(PatternConfig(VibrationPattern.VIB_PATTERN_LIST[4], 6, 80, 3))
+        # VELOCITY Defaults: (None, 40, 80, 16)
         self.pattern_config_list.append(PatternConfig(VibrationPattern.VIB_PATTERN_LIST[0], 40, 80, 16))
 
     @staticmethod

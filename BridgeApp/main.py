@@ -6,13 +6,13 @@ from server_websocket import ResoniteWebSocketServer
 from target_ovr import OpenVRTracker
 import traceback
 import platform
+import time
 
 bridge_server: ServerBase = None
 vr: OpenVRTracker = None
 config: AppConfig = None
 gui: GUIRenderer = None
 external_id: int = 0
-
 
 def main():
     print(f"[Main] Using Python: {platform.python_version()}")
@@ -40,14 +40,15 @@ def main():
 
     # Add trackers to GUI
     refresh_tracker_list()
-
-    # Add footer
-    gui.add_footer()
+    last_refresh_time = time.time()
 
     # Main GUI loop here
     while gui.run():
-        pass
-
+        # Refresh tracker list automatically every 5 seconds
+        current_time = time.time()
+        if current_time - last_refresh_time >= 5.0:
+            refresh_tracker_list()
+            last_refresh_time = current_time
 
 def start_bridge_server():
     global bridge_server
@@ -80,7 +81,7 @@ def refresh_tracker_list():
 
     # Debug tracker (Uncomment this for debug purposes)
     # gui.add_tracker("T35T-53R1AL", "Test Model 1.0")
-    print("[Main] Tracker list refreshed")
+    #print("[Main] Tracker list refreshed")
 
 
 def add_external_target(external_type):

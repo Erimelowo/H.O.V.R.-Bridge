@@ -1,5 +1,6 @@
 import FreeSimpleGUI as sg
 import webbrowser
+import time
 
 from app_config import AppConfig, PatternConfig
 from app_pattern import VibrationPattern
@@ -12,14 +13,12 @@ KEY_SERVER_TYPE = '-SERVER-TYPE-'
 KEY_REC_IP = '-REC-IP-'
 KEY_REC_PORT = '-REC-PORT-'
 KEY_BTN_APPLY = '-BTN-APPLY-'
-KEY_BTN_REFRESH = '-BTN-REFRESH'
 KEY_OPEN_URL = '-OPENURL'
 KEY_OSC_STATUS_BAR = '-OSC-STATUS-BAR-'
 KEY_LAYOUT_TRACKERS = '-LAYOUT-TRACKERS-'
 KEY_OSC_ADDRESS = '-ADDRESS-OF-'
 KEY_VIB_STR_OVERRIDE = '-VIB-STR-'
 KEY_BTN_TEST = '-BTN-TEST-'
-KEY_BTN_CALIBRATE = '-BTN-CALIBRATE-'
 KEY_BTN_ADD_EXTERNAL = '-BTN-ADD-EXTERNAL-'
 KEY_BATTERY_THRESHOLD = '-BATTERY-'
 
@@ -80,6 +79,8 @@ class GUIRenderer:
             [self.small_vertical_space()],
             [sg.Text('Trackers found:', font='_ 14')],
             [self.tracker_frame],
+            [sg.HSep()],
+            [sg.Text("Made by Zelus (Z4urce), forked by Erimel (Erimelowo)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()]
         ]
 
     @staticmethod
@@ -120,7 +121,7 @@ class GUIRenderer:
 
         multiplier_tooltip = "Additional strength multiplier\nCompensates for different trackers\n4.0 for default (Vive/Tundra Tracker)\n200 for Vive Wand\n400 for Index c."
 
-        print(f"[GUI] Adding tracker: {string}")
+        #print(f"[GUI] Adding tracker: {string}")
         layout = [
             [sg.Text(string, pad=(0, 0))],
             [sg.Text(" "), sg.Text("Address:"),
@@ -148,9 +149,7 @@ class GUIRenderer:
               sg.VSeparator(),
               sg.Text("Pulse multiplier:", tooltip=multiplier_tooltip, pad=0),
               sg.InputText(vib_multiplier, k=(KEY_VIB_STR_OVERRIDE, tracker_serial), enable_events=True,
-                           size=4, tooltip=multiplier_tooltip),
-              sg.Button("Calibrate", button_color='grey', disabled=True, key=(KEY_BTN_CALIBRATE, tracker_serial),
-                        tooltip="Coming soon...")]
+                           size=4, tooltip=multiplier_tooltip)]
         return self.device_row(tracker_serial, tracker_model, tr)
 
     def add_tracker(self, tracker_serial, tracker_model):
@@ -188,8 +187,10 @@ class GUIRenderer:
 
     def add_target(self, tracker_serial, tracker_model, layout):
         if tracker_serial in self.trackers:
-            print(f"[GUI] Tracker {tracker_serial} is already on the list. Skipping...")
+            #print(f"[GUI] Tracker {tracker_serial} is already on the list. Skipping...")
             return
+        
+        print(f"[GUI] Adding tracker: {tracker_serial} {tracker_model}")
 
         # row = [self.tracker_row(tracker_serial, tracker_model)]
         if self.window is not None:
@@ -203,17 +204,6 @@ class GUIRenderer:
     def add_message(self, message):
         self.layout.append([sg.HSep()])
         self.layout.append([sg.Text(message, text_color='red')])
-
-    def add_footer(self):
-        external_devices = ['Add', ['Emulated (Sound)::EMUSND', 'Emulated (Text)::EMUTXT',
-                                    'Serial (COM port)::SERIALCOM', 'Network (Server)::NETWORK']]
-        self.layout.append([self.small_vertical_space()])
-        self.layout.append([sg.Button("Refresh Tracker List", size=18, key=KEY_BTN_REFRESH),
-                            sg.ButtonMenu("Add External device", external_devices, key=KEY_BTN_ADD_EXTERNAL, disabled=True,
-                                          tooltip="Add an external feedback device"), ])
-        self.layout.append([sg.HSep()])
-        self.layout.append(
-            [sg.Text("Made by Zelus (Z4urce), forked by Erimel (Erimelowo)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()])
 
     def update_osc_status_bar(self, message, is_error=False):
         text_color = 'red' if is_error else 'green'
@@ -246,8 +236,9 @@ class GUIRenderer:
         # We make sure the layout update is called only when it's changed.
         self.layout_dirty = False
 
-        # This is the main GUI loop. The code will halt here until the next event.
-        event, values = self.window.read()
+        # This is the main GUI loop. The code will halt here until the next event or timeout.
+        # Timeout is used to periodically check for new trackers.
+        event, values = self.window.read(timeout=500)
 
         # Update Values
         self.update_values(values)
@@ -259,12 +250,8 @@ class GUIRenderer:
             return False
         if event[0] == KEY_BTN_TEST:
             self.tracker_test_event(event[1])
-        if event == KEY_BTN_ADD_EXTERNAL:
-            self.add_external_event(values[KEY_BTN_ADD_EXTERNAL])
         if event == KEY_BTN_APPLY:
             self.restart_osc_event()
-        if event == KEY_BTN_REFRESH:
-            self.refresh_trackers_event()
         if event == KEY_OPEN_URL:
             webbrowser.open("https://github.com/Erimelowo/H.O.V.R.-Bridge")
 
