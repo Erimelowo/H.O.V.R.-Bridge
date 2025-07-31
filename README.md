@@ -10,7 +10,9 @@ You can either buy H.O.V.R. [here](https://payhip.com/b/nDEYw) for US$39 + shipp
 Avatar setup is a drag and drop using [VRCFury](https://vrcfury.com/download) and a prefab available [here](https://payhip.com/b/Ye28f).
 
 # Setting up the software
-Download the .exe from the latest release and run it.
+You can download the latest version from the Releases of [here](https://github.com/Erimelowo/H.O.V.R.-Bridge/releases/latest/download/HOVR-Bridge.exe) directly.
+
+Then just put HOVR-Bridge.exe in a folder and run it.
 
 ## Starting automatically with SteamVR
 Put [manifest.vrmanifest](manifest.vrmanifest) in the same folder as HOVR-Bridge.exe and run it with SteamVR. Then go in SteamVR Startup/Shutdown settings and you can set it so that it runs automatically with SteamVR.
