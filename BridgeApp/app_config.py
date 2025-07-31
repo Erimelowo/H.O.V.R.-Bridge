@@ -25,7 +25,7 @@ class VRTracker:
             return 100.0
 
         # Vive Tracker, Tundra Tracker, etc
-        return 1.0
+        return 4.0
 
 
 # This is a definition class for storing user settings per tracker
@@ -34,13 +34,13 @@ class TrackerConfig(BaseModel):
     enabled: bool = True  # Not yet used
     address: str = "" # Deprecated
     address_list: List[str] = []
-    multiplier_override: float = 1.0
+    multiplier_override: float = 4.0
     pattern_override: str = "None"
-    battery_threshold: int = 20
+    battery_threshold: int = 0
     
     def get_address_str(self):
         if len(self.address_list) == 0:
-            self.address_list.append("/avatar/parameters/...")
+            self.address_list.append("/avatar/parameters/")
         
         result = ";".join(self.address_list)
         return result
@@ -62,7 +62,7 @@ class TrackerConfig(BaseModel):
         try:
             self.battery_threshold = int(value)
         except ValueError:
-            self.battery_threshold = 20
+            self.battery_threshold = 0
 
 
 class PatternConfig(BaseModel):

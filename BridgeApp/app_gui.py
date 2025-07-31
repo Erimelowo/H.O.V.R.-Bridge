@@ -4,7 +4,7 @@ import webbrowser
 from app_config import AppConfig, PatternConfig
 from app_pattern import VibrationPattern
 
-WINDOW_NAME = "Haptic Pancake Bridge v0.7.0a"
+WINDOW_NAME = "H.O.V.R. Bridge v0.1.0"
 
 LIST_SERVER_TYPE = ["OSC (VRChat)", "WebSocket (Resonite)"]
 
@@ -36,7 +36,8 @@ KEY_VIB_SPEED = '-VIB-SPD-'
 class GUIRenderer:
     def __init__(self, app_config: AppConfig, tracker_test_event,
                  restart_osc_event, refresh_trackers_event, add_external_event):
-        sg.theme('DarkAmber')
+        sg.theme('Black')
+        sg.theme_button_color("#c48e11")
         self.tracker_test_event = tracker_test_event
         self.restart_osc_event = restart_osc_event
         self.refresh_trackers_event = refresh_trackers_event
@@ -116,7 +117,7 @@ class GUIRenderer:
         vib_multiplier = dev_config.multiplier_override
         battery_threshold = dev_config.battery_threshold
 
-        multiplier_tooltip = "Additional strength multiplier\nCompensates for different trackers\n1.0 for default (Vive/Tundra Tracker)\n200 for Vive Wand\n400 for Index c."
+        multiplier_tooltip = "Additional strength multiplier\nCompensates for different trackers\n4.0 for default (Vive/Tundra Tracker)\n200 for Vive Wand\n400 for Index c."
 
         print(f"[GUI] Adding tracker: {string}")
         layout = [
@@ -211,7 +212,7 @@ class GUIRenderer:
                                           tooltip="Add an external feedback device"), ])
         self.layout.append([sg.HSep()])
         self.layout.append(
-            [sg.Text("Made by Zelus (Z4urce)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()])
+            [sg.Text("Made by Zelus (Z4urce), forked by Erimel (Erimelowo)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()])
 
     def update_osc_status_bar(self, message, is_error=False):
         text_color = 'red' if is_error else 'green'
@@ -264,7 +265,7 @@ class GUIRenderer:
         if event == KEY_BTN_REFRESH:
             self.refresh_trackers_event()
         if event == KEY_OPEN_URL:
-            webbrowser.open("https://hapticpancake.com/")
+            webbrowser.open("https://github.com/Erimelowo/H.O.V.R.-Bridge")
 
         return True
 
