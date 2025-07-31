@@ -9,7 +9,7 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['BridgeApp/main.py'],
+    ['BridgeApp\\main.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -19,6 +19,7 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
+    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -28,7 +29,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='hapticpancake',
+    name='HOVR-Bridge',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -41,5 +42,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['Images/icon.ico'],
+    icon=['BridgeApp\\icon.ico'],
 )

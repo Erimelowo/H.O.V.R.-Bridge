@@ -1,0 +1,16 @@
+{
+	"source" : "builtin",
+	"applications": [{
+		"app_key": "haptic.pancake",
+		"launch_type": "binary",
+		"binary_path_windows": "hapticpancake_v0.7.0a.exe",
+		"is_dashboard_overlay": true,
+
+		"strings": {
+			"en_us": {
+				"name": "Pancake haptics",
+				"description": "Pancake haptics for vive tracker haptics"
+			}
+		}
+	}]
+}

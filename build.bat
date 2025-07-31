@@ -1,1 +1,1 @@
-pyinstaller -wF --collect-all openvr --name hapticpancake --icon=Images\icon.ico BridgeApp/main.py
+pyinstaller -wF --collect-all openvr --name HOVR-Bridge --icon=BridgeApp\icon.ico BridgeApp/main.py
