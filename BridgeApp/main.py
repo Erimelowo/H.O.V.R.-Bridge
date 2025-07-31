@@ -118,7 +118,7 @@ if __name__ == '__main__':
             config.save()
     except Exception as e:
         print(f"[Main][ERROR] {e}\n{traceback.format_exc()}")
-        with open('hpb_crashlog.txt', "w+") as crash_log:
+        with open('hovr_crashlog.txt', "w+") as crash_log:
             import json
 
             json.dump(traceback.format_exc(), fp=crash_log)
