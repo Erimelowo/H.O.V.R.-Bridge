@@ -5,3 +5,4 @@ config.json
 [Bb]uild/
 [Ddist]/
 dist/
+hovr_crashlog.txt
