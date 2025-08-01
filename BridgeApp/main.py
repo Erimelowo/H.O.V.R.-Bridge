@@ -2,6 +2,7 @@ from app_config import AppConfig
 from app_gui import GUIRenderer
 from server_base import ServerBase
 from server_osc import VRChatOSCReceiver
+from osc_router import OSCRouter
 from server_websocket import ResoniteWebSocketServer
 from target_ovr import OpenVRTracker
 import traceback
@@ -9,6 +10,7 @@ import platform
 import time
 
 bridge_server: ServerBase = None
+osc_router: OSCRouter = None
 vr: OpenVRTracker = None
 config: AppConfig = None
 gui: GUIRenderer = None
@@ -26,11 +28,14 @@ def main():
 
     # Init GUI
     global gui
-    gui = GUIRenderer(config, pulse_test, restart_bridge_server, refresh_tracker_list, add_external_target)
+    gui = GUIRenderer(config, pulse_test, restart_bridge_server, refresh_tracker_list, add_external_target, restart_osc_router)
     print("[Main] GUI initialized")
 
     # Start the Server
     start_bridge_server()
+
+    # Start the router
+    start_osc_router()
 
     print("[Main] Bridge server started")
 
@@ -58,6 +63,12 @@ def start_bridge_server():
         bridge_server = VRChatOSCReceiver(config, param_received, gui.update_osc_status_bar)
     bridge_server.start_server()
 
+def start_osc_router():
+    global osc_router
+    if config.router_enabled == False:
+        return
+    osc_router = OSCRouter(config, gui.update_router_status_bar)
+    osc_router.start_client()
 
 # Adapter functions
 def pulse_test(tracker_serial):
@@ -71,6 +82,10 @@ def restart_bridge_server():
         bridge_server.shutdown()
     start_bridge_server()
 
+def restart_osc_router():
+    if osc_router is not None:
+        osc_router.shutdown()
+    start_osc_router()
 
 def refresh_tracker_list():
     if vr is None or gui is None:
@@ -108,7 +123,9 @@ def add_external_target(external_type):
 def param_received(address, value):
     # value is the floating value (0..1) that determines how intense the feedback should be
     for serial, tracker_config in config.tracker_config_dict.items():
-        if  address in tracker_config.address_list:
+        if osc_router is not None:
+            osc_router.send_message(address, value)
+        if address in tracker_config.address_list:
             vr.set_strength(serial, value)
 
 

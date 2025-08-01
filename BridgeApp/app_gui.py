@@ -22,6 +22,11 @@ KEY_BTN_TEST = '-BTN-TEST-'
 KEY_BTN_ADD_EXTERNAL = '-BTN-ADD-EXTERNAL-'
 KEY_BATTERY_THRESHOLD = '-BATTERY-'
 KEY_START_MINIMIZED = '-START-MINIMIZED-'
+KEY_ROUTER_ENABLED = '-ROUTER-ENABLED-'
+KEY_ROUTER_IP = '-ROUTER-IP-'
+KEY_ROUTER_PORT = '-ROUTER-PORT-'
+KEY_ROUTER_APPLY = '-ROUTER-APPLY-'
+KEY_ROUTER_STATUS_BAR = '-ROUTER-STATUS-BAR-'
 
 # Pattern Config
 KEY_PROXIMITY = '-PROXY-'
@@ -35,7 +40,7 @@ KEY_VIB_SPEED = '-VIB-SPD-'
 
 class GUIRenderer:
     def __init__(self, app_config: AppConfig, tracker_test_event,
-                 restart_osc_event, refresh_trackers_event, add_external_event):
+                 restart_osc_event, refresh_trackers_event, add_external_event, restart_router_event):
         sg.theme_add_new('HOVR', {'BACKGROUND': '#000000','TEXT': '#FFFFFF','INPUT': '#4D4D4D','TEXT_INPUT': '#FFFFFF','SCROLL': '#707070','BUTTON': ('#FFFFFF', '#371f76'),'PROGRESS': ('#000000','#000000'),'BORDER': 1,'SLIDER_DEPTH': 0,'PROGRESS_DEPTH': 0,})
         sg.theme('HOVR')
 
@@ -43,6 +48,7 @@ class GUIRenderer:
         self.restart_osc_event = restart_osc_event
         self.refresh_trackers_event = refresh_trackers_event
         self.add_external_event = add_external_event
+        self.restart_router_event = restart_router_event
 
         self.config = app_config
         self.shutting_down = False
@@ -50,6 +56,7 @@ class GUIRenderer:
         self.layout_dirty = False
         self.trackers = []
         self.osc_status_bar = sg.Text('', key=KEY_OSC_STATUS_BAR)
+        self.router_status_bar = sg.Text('', key=KEY_ROUTER_STATUS_BAR)
         self.tracker_frame = sg.Column([], key=KEY_LAYOUT_TRACKERS, scrollable=True, vertical_scroll_only=True, expand_y=True, size=(406,270))
         self.layout = []
         self.build_layout()
@@ -76,6 +83,13 @@ class GUIRenderer:
              sg.InputText(self.config.server_port, key=KEY_REC_PORT, size=13),
              sg.Button("Apply", key=KEY_BTN_APPLY, tooltip="Apply and restart server.")],
             [sg.Text("Server status:"), self.osc_status_bar],
+            [sg.Checkbox("OSC Router", default=self.config.router_enabled, key=KEY_ROUTER_ENABLED)],
+            [sg.Text("Address:", size=9),
+             sg.InputText(self.config.router_ip, k=KEY_ROUTER_IP, size=16, tooltip="IP Address. Default is 127.0.0.1"),
+             sg.Text("Port:", tooltip="UDP Port. Default is 9002"),
+             sg.InputText(self.config.router_port, key=KEY_ROUTER_PORT, size=13),
+             sg.Button("Apply", key=KEY_ROUTER_APPLY, tooltip="Apply and restart router.")],
+            [sg.Text("Router status:"), self.router_status_bar],
             [self.small_vertical_space()],
             [sg.Text('Haptic settings:', font='_ 13')],
             [proximity_frame, velocity_frame],
@@ -220,6 +234,18 @@ class GUIRenderer:
             except Exception as e:
                 print("[GUI] Failed to update server status bar.")
 
+    def update_router_status_bar(self, message, is_error=False):
+        text_color = 'red' if is_error else 'green'
+        if self.window is None:
+            self.router_status_bar.DisplayText = message
+            self.router_status_bar.TextColor = text_color
+            return
+        if not self.shutting_down:
+            try:
+                self.router_status_bar.update(message, text_color=text_color)
+            except Exception as e:
+                print("[GUI] Failed to update router status bar.")
+
     def refresh(self):
         self.tracker_frame.contents_changed()
         self.tracker_frame.set_vscroll_position(1)
@@ -257,6 +283,8 @@ class GUIRenderer:
             self.tracker_test_event(event[1])
         if event == KEY_BTN_APPLY:
             self.restart_osc_event()
+        if event == KEY_ROUTER_APPLY:
+            self.restart_router_event()
         if event == KEY_OPEN_URL:
             webbrowser.open("https://github.com/Erimelowo/H.O.V.R.-Bridge")
 
@@ -277,6 +305,11 @@ class GUIRenderer:
         self.config.server_type = LIST_SERVER_TYPE.index(values[KEY_SERVER_TYPE])
         self.config.server_ip = values[KEY_REC_IP]
         self.config.server_port = int(values[KEY_REC_PORT])
+
+        # Update OSC router config
+        self.config.router_enabled = values[KEY_ROUTER_ENABLED]
+        self.config.router_ip = values[KEY_ROUTER_IP]
+        self.config.router_port = int(values[KEY_ROUTER_PORT])
 
         # Update vibration intensity and pattern
         self.update_pattern_config(values, VibrationPattern.PROXIMITY, KEY_PROXIMITY)

@@ -87,6 +87,9 @@ class AppConfig(BaseModel):
     pattern_config_list: List[PatternConfig] = []
     tracker_config_dict: Dict[str, TrackerConfig] = {}
     start_minimized: bool = False
+    router_enabled: bool = False
+    router_ip: str = "127.0.0.1"
+    router_port: int = 9002
 
     # OBSOLETE - Will delete these in the next version
     tracker_to_osc: Dict[str, str] = {}
