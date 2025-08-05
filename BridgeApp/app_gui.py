@@ -286,6 +286,7 @@ class GUIRenderer:
 
         # Manually readd osc status
         self.osc_status_bar.update(osc_status_bar_text, text_color=osc_status_bar_color)
+        self.osc_status_bar.TextColor = osc_status_bar_color
 
         # Mark layout as dirty
         self.layout_dirty = True
