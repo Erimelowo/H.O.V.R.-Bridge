@@ -41,9 +41,6 @@ def main():
     # Add trackers to GUI
     refresh_tracker_list()
 
-    # Add footer
-    gui.add_footer()
-
     # Main GUI loop here
     while gui.run():
         pass

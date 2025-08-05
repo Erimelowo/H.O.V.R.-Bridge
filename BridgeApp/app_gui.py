@@ -7,6 +7,7 @@ from app_pattern import VibrationPattern
 WINDOW_NAME = "Haptic Pancake Bridge v0.8.0a"
 
 LIST_SERVER_TYPE = ["OSC (VRChat)", "WebSocket (Resonite)"]
+LIST_THEME = [] # Initialized in __init__
 
 KEY_SERVER_TYPE = '-SERVER-TYPE-'
 KEY_REC_IP = '-REC-IP-'
@@ -23,6 +24,7 @@ KEY_BTN_TEST = '-BTN-TEST-'
 KEY_BTN_CALIBRATE = '-BTN-CALIBRATE-'
 KEY_BTN_ADD_EXTERNAL = '-BTN-ADD-EXTERNAL-'
 KEY_BATTERY_THRESHOLD = '-BATTERY-'
+KEY_THEME = '-THEME-'
 
 # Pattern Config
 KEY_PROXIMITY = '-PROXY-'
@@ -40,24 +42,35 @@ TIMER_REFRESH_MS = 30 * 1000
 class GUIRenderer:
     def __init__(self, app_config: AppConfig, tracker_test_event,
                  restart_osc_event, refresh_trackers_event, add_external_event):
-        sg.theme('DarkAmber')
         self.tracker_test_event = tracker_test_event
         self.restart_osc_event = restart_osc_event
         self.refresh_trackers_event = refresh_trackers_event
         self.add_external_event = add_external_event
-
         self.config = app_config
+
+        # Add custom themes
+        sg.theme_add_new('HOVR', {'BACKGROUND': '#000000','TEXT': '#FFFFFF','INPUT': '#4D4D4D','TEXT_INPUT': '#FFFFFF','SCROLL': '#707070','BUTTON': ('#FFFFFF', '#371f76'),'PROGRESS': ('#000000','#000000'),'BORDER': 1,'SLIDER_DEPTH': 0,'PROGRESS_DEPTH': 0,})
+        global LIST_THEME
+        LIST_THEME = sg.theme_list()
+
+        # Load theme from config
+        try:
+            sg.theme(self.config.theme)
+        except:
+            sg.theme("DarkAmber")
+            self.config.theme = "DarkAmber"
+            print(f"[GUI] Couldn't load theme from config. Defaulting to DarkAmber theme.")
+
         self.shutting_down = False
         self.window = None
         self.layout_dirty = False
         self.trackers = []
-        self.osc_status_bar = sg.Text('', key=KEY_OSC_STATUS_BAR)
-        self.tracker_status_bar = sg.Text('', key=KEY_TRACKER_STATUS_BAR, font='_ 14')
-        self.tracker_frame = sg.Column([], key=KEY_LAYOUT_TRACKERS, scrollable=True, vertical_scroll_only=True, expand_y=True, size=(406,270))
-        self.layout = []
         self.build_layout()
 
     def build_layout(self):
+        self.osc_status_bar = sg.Text('', key=KEY_OSC_STATUS_BAR)
+        self.tracker_status_bar = sg.Text('', key=KEY_TRACKER_STATUS_BAR, font='_ 14')
+        self.tracker_frame = sg.Column([], key=KEY_LAYOUT_TRACKERS, scrollable=True, vertical_scroll_only=True, expand_y=True, size=(406,270))
         proximity_frame = sg.Frame('Proximity Feedback', tooltip="Closer object means stronger vibration.",
                                    layout=self.build_pattern_setting_layout(
                                        KEY_PROXIMITY, VibrationPattern.VIB_PATTERN_LIST,
@@ -68,6 +81,9 @@ class GUIRenderer:
                                       self.config.pattern_config_list[VibrationPattern.VELOCITY]))
 
         self.layout = [
+            [sg.Text('App settings:', font='_ 14')],
+            [sg.Text("Theme:"),
+             sg.InputCombo(LIST_THEME, self.config.theme, key=KEY_THEME, enable_events=True)],
             [sg.Text('Bridge settings:', font='_ 14')],
             [sg.Text("Server Type:"),
              sg.InputCombo(LIST_SERVER_TYPE, LIST_SERVER_TYPE[self.config.server_type], key=KEY_SERVER_TYPE)],
@@ -83,6 +99,13 @@ class GUIRenderer:
             [self.small_vertical_space()],
             [sg.Text('Devices:', font='_ 14'), self.tracker_status_bar],
             [self.tracker_frame],
+            [self.small_vertical_space()],
+            [sg.Button("Refresh Tracker List", size=18, key=KEY_BTN_REFRESH)],
+            #sg.ButtonMenu("Add External device",  ['Add', ['Emulated (Sound)::EMUSND', 'Emulated (Text)::EMUTXT',
+            #'Serial (COM port)::SERIALCOM', 'Network (Server)::NETWORK']], key=KEY_BTN_ADD_EXTERNAL, disabled=True,
+            #tooltip="Add an external feedback device")],
+            [sg.HSep()],
+            [sg.Text("Made by Zelus (Z4urce)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()]
         ]
 
     @staticmethod
@@ -152,9 +175,9 @@ class GUIRenderer:
               sg.VSeparator(),
               sg.Text("Pulse multiplier:", tooltip=multiplier_tooltip, pad=0),
               sg.InputText(vib_multiplier, k=(KEY_VIB_STR_OVERRIDE, tracker_serial), enable_events=True,
-                           size=4, tooltip=multiplier_tooltip),
-              sg.Button("Calibrate", button_color='grey', disabled=True, key=(KEY_BTN_CALIBRATE, tracker_serial),
-                        tooltip="Coming soon...")]
+                           size=4, tooltip=multiplier_tooltip)]
+              #sg.Button("Calibrate", button_color='grey', disabled=True, key=(KEY_BTN_CALIBRATE, tracker_serial),
+              #          tooltip="Coming soon...")]
         return self.device_row(tracker_serial, tracker_model, tr, color=color, quiet_refresh=quiet_refresh)
 
     def add_tracker(self, tracker_serial, tracker_model, is_online=False, quiet_refresh=False):
@@ -209,17 +232,6 @@ class GUIRenderer:
         self.layout.append([sg.HSep()])
         self.layout.append([sg.Text(message, text_color='red')])
 
-    def add_footer(self):
-        external_devices = ['Add', ['Emulated (Sound)::EMUSND', 'Emulated (Text)::EMUTXT',
-                                    'Serial (COM port)::SERIALCOM', 'Network (Server)::NETWORK']]
-        self.layout.append([self.small_vertical_space()])
-        self.layout.append([sg.Button("Refresh Tracker List", size=18, key=KEY_BTN_REFRESH),
-                            sg.ButtonMenu("Add External device", external_devices, key=KEY_BTN_ADD_EXTERNAL, disabled=True,
-                                          tooltip="Add an external feedback device"), ])
-        self.layout.append([sg.HSep()])
-        self.layout.append(
-            [sg.Text("Made by Zelus (Z4urce)", enable_events=True, font='Default 8 underline', key=KEY_OPEN_URL), sg.Sizegrip()])
-
     def update_osc_status_bar(self, message, is_error=False):
         text_color = 'red' if is_error else 'green'
         if self.window is None:
@@ -250,22 +262,42 @@ class GUIRenderer:
         self.tracker_frame.contents_changed()
         self.tracker_frame.set_vscroll_position(1)
         self.window.refresh()
+        self.layout_dirty = False
+
+    def create_window(self):
+        self.window = sg.Window(WINDOW_NAME, self.layout, keep_on_top=False, finalize=True, alpha_channel=1, icon=b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABhWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TpVIrDhYVcchQnezgB+JYqlgEC6Wt0KqDyaVf0KQhSXFxFFwLDn4sVh1cnHV1cBUEwQ8QZwcnRRcp8X9NoUWMB8f9eHfvcfcOEOplpppdEUDVLCMZi4qZ7Kroe0UvBjEEPyYlZurx1GIaruPrHh6+3oV5lvu5P0efkjMZ4BGJI0w3LOIN4tlNS+e8TxxkRUkhPieeMOiCxI9clx1+41xossAzg0Y6OU8cJBYLHSx3MCsaKvEMcUhRNcoXMg4rnLc4q+Uqa92TvzCQ01ZSXKc5ihiWEEcCImRUUUIZFsK0aqSYSNJ+1MU/0vQnyCWTqwRGjgVUoEJq+sH/4He3Zn56ykkKRIHuF9v+GAN8u0CjZtvfx7bdOAG8z8CV1vZX6sDcJ+m1thY6Avq3gYvrtibvAZc7wPCTLhlSU/LSFPJ54P2MvikLDNwC/jWnt9Y+Th+ANHW1fAMcHALjBcped3l3T2dv/55p9fcD3S9y0apk9h0AAAAGYktHRAD/AP8A/6C9p5MAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfoCxYXCzDoJVaPAAACuElEQVQ4y2WTTW8bdRDGfzO767f1xnGcJiSNVNoKqMoJgRBCwifuIHFFuSDRTwDi2CNfgC/gGxfElV6ockEISAJBiAJ5KVnqxk7idbx+ie39DwcngaqH0Wj0HJ756ZmRjz7940Ym0nCe1DMVnArZRbn/d+85bcMJ6744GqrUzYFimIAamMF5P8GCAC1GqAMDlFk3qItKQ9WsrmaoGd32LjYeMeg0edj4mOP9Hzj4/ku2v77PJO3MtPZj1GYmYlb31c1ch2ct5uZW6XZikpN9Rr02v377BenRNsuvvkfa2sUP5wlKFbJhDy1FmAm+GpiD6XkfRFGDfD7infc/p9XcobTwGbmoRpq2sKBI8VqNXjemUCijAr6YXa2kCL74RHOrEORYufkW5vk4haJlOAQFyDLUAAeqzhBn5IOQwMsxGfUo5MqMBwm++IjLmPQTovk1PFFGyVPCygpqhphdIBiUS4t0zg5ZWrqL84RcWL2KraTgVPEWb5KmLQIvT+bsWYThIKF1+BO9XpPDg+9YufU2raPfqCy/zOnJHvlyFcmVyMhYq65h/yGAOGA64cmjBxzHW/Tbf5Ec/c5Z6xFh+RphtESvfUAn3mFh+Q5yEbuYoZc3oAbVxZc4T2KiuRcYnP7N3dc/JCzVZjpGLiiyv/kVl6bqDPnk3o51ksc0n25SrFwn85TxdIRXiBi7Mc5Tpm5CYX6F5uGP5Mo1BoMON974AK8YzRCycUpn9yHd5i9M0xO6/2xzGm9ynsSEpRrZ8Ixee4+9b+5TrqzSP96buV8ieA5eefMeMh7Re/IzleqLyGSEOkcn3iKJt+i3/qR2612GpzGlcBFPfdSBL8bG/MLtulMhfO06mQoWBLMIRXCesnZn+sxnLtkUTzww2/AxWw+8fMOJ1NUv4Lzn39lXIVOu5kAFJ7rhnK3/C07bcJ2GHOyzAAAAAElFTkSuQmCC')
+        self.window.set_resizable(False, True)
+        # Start background refresh timer
+        self.window.timer_start(TIMER_REFRESH_MS, key=KEY_TIMER_REFRESH, repeating=False)
+
+    def recreate_window(self):
+        # Cache OSC status
+        osc_status_bar_text = self.osc_status_bar.DisplayText
+        osc_status_bar_color = self.osc_status_bar.TextColor
+
+        # Close window, recreate new layout and recreate window
+        self.window.close()
+        self.build_layout()
+        self.create_window()
+
+        # Refresh trackers because it's too much of a pain to cache them and readd them
+        self.trackers = []
+        self.refresh_trackers_event()
+
+        # Manually readd osc status
+        self.osc_status_bar.update(osc_status_bar_text, text_color=osc_status_bar_color)
+
+        # Mark layout as dirty
         self.layout_dirty = True
 
     def run(self):
         if self.window is None:
-            self.window = sg.Window(WINDOW_NAME, self.layout, keep_on_top=False, finalize=True, alpha_channel=0.95, icon=b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABhWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TpVIrDhYVcchQnezgB+JYqlgEC6Wt0KqDyaVf0KQhSXFxFFwLDn4sVh1cnHV1cBUEwQ8QZwcnRRcp8X9NoUWMB8f9eHfvcfcOEOplpppdEUDVLCMZi4qZ7Kroe0UvBjEEPyYlZurx1GIaruPrHh6+3oV5lvu5P0efkjMZ4BGJI0w3LOIN4tlNS+e8TxxkRUkhPieeMOiCxI9clx1+41xossAzg0Y6OU8cJBYLHSx3MCsaKvEMcUhRNcoXMg4rnLc4q+Uqa92TvzCQ01ZSXKc5ihiWEEcCImRUUUIZFsK0aqSYSNJ+1MU/0vQnyCWTqwRGjgVUoEJq+sH/4He3Zn56ykkKRIHuF9v+GAN8u0CjZtvfx7bdOAG8z8CV1vZX6sDcJ+m1thY6Avq3gYvrtibvAZc7wPCTLhlSU/LSFPJ54P2MvikLDNwC/jWnt9Y+Th+ANHW1fAMcHALjBcped3l3T2dv/55p9fcD3S9y0apk9h0AAAAGYktHRAD/AP8A/6C9p5MAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfoCxYXCzDoJVaPAAACuElEQVQ4y2WTTW8bdRDGfzO767f1xnGcJiSNVNoKqMoJgRBCwifuIHFFuSDRTwDi2CNfgC/gGxfElV6ockEISAJBiAJ5KVnqxk7idbx+ie39DwcngaqH0Wj0HJ756ZmRjz7940Ym0nCe1DMVnArZRbn/d+85bcMJ6744GqrUzYFimIAamMF5P8GCAC1GqAMDlFk3qItKQ9WsrmaoGd32LjYeMeg0edj4mOP9Hzj4/ku2v77PJO3MtPZj1GYmYlb31c1ch2ct5uZW6XZikpN9Rr02v377BenRNsuvvkfa2sUP5wlKFbJhDy1FmAm+GpiD6XkfRFGDfD7infc/p9XcobTwGbmoRpq2sKBI8VqNXjemUCijAr6YXa2kCL74RHOrEORYufkW5vk4haJlOAQFyDLUAAeqzhBn5IOQwMsxGfUo5MqMBwm++IjLmPQTovk1PFFGyVPCygpqhphdIBiUS4t0zg5ZWrqL84RcWL2KraTgVPEWb5KmLQIvT+bsWYThIKF1+BO9XpPDg+9YufU2raPfqCy/zOnJHvlyFcmVyMhYq65h/yGAOGA64cmjBxzHW/Tbf5Ec/c5Z6xFh+RphtESvfUAn3mFh+Q5yEbuYoZc3oAbVxZc4T2KiuRcYnP7N3dc/JCzVZjpGLiiyv/kVl6bqDPnk3o51ksc0n25SrFwn85TxdIRXiBi7Mc5Tpm5CYX6F5uGP5Mo1BoMON974AK8YzRCycUpn9yHd5i9M0xO6/2xzGm9ynsSEpRrZ8Ixee4+9b+5TrqzSP96buV8ieA5eefMeMh7Re/IzleqLyGSEOkcn3iKJt+i3/qR2612GpzGlcBFPfdSBL8bG/MLtulMhfO06mQoWBLMIRXCesnZn+sxnLtkUTzww2/AxWw+8fMOJ1NUv4Lzn39lXIVOu5kAFJ7rhnK3/C07bcJ2GHOyzAAAAAElFTkSuQmCC')
-            self.window.set_resizable(False, True)
-            # Start background refresh timer
-            self.window.timer_start(TIMER_REFRESH_MS, key=KEY_TIMER_REFRESH, repeating=False)
+            self.create_window()
 
         # Update Layout if it's changed.
         if self.layout_dirty:
             self.refresh()
             print('Refreshing layout...')
-        
-        # We make sure the layout update is called only when it's changed.
-        self.layout_dirty = False
 
         # This is the main GUI loop. The code will halt here until the next event.
         event, values = self.window.read()
@@ -302,6 +334,13 @@ class GUIRenderer:
 
         for tracker in self.trackers:
             self.update_tracker_config(values, tracker)
+
+        # Update app settings
+        oldTheme = self.config.theme
+        self.config.theme = values[KEY_THEME]
+        if oldTheme != self.config.theme: # Theme change
+            sg.theme(self.config.theme)
+            self.recreate_window()
 
         # Update OSC Addresses
         self.config.server_type = LIST_SERVER_TYPE.index(values[KEY_SERVER_TYPE])
