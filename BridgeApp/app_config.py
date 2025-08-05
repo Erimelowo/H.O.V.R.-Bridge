@@ -86,6 +86,7 @@ class AppConfig(BaseModel):
     server_port: int = 9001
     pattern_config_list: List[PatternConfig] = []
     tracker_config_dict: Dict[str, TrackerConfig] = {}
+    start_minimized: bool = False
 
     # OBSOLETE - Will delete these in the next version
     tracker_to_osc: Dict[str, str] = {}
